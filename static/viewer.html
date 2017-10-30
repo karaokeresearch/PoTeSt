@@ -1,0 +1,295 @@
+<DOCTYPE html>
+<html>
+    <head>
+        <title>PoTeSt Viewer</title>
+    </head>
+    <body>
+       
+        <style>
+        	
+        	body
+					{
+						  margin: 0em auto;
+            	padding: 0 0em;
+					    width: 100%;
+					    height: 100%;
+				    	background-color: black;	
+					}
+
+        	
+        	
+            .videoContainer {
+   				    position: fixed;
+					    top: 0;
+					    right: 0;
+					    bottom: 0;
+					    left: 0;
+					    overflow: hidden;
+					   
+					    visibility:hidden;
+            }
+  
+					  .fullscreen-bg__video {
+					    position: absolute;
+					    top: 0;
+					    left: 0;
+					    width: 100%;
+					    height: 100%;
+					}
+					
+					
+  
+            
+        </style>
+       
+      
+ 		    <div id="remotes"></div>
+        <script src="jquery.min.js"></script>
+        <script src="simplewebrtc/simplewebrtc-with-adapter.bundle.js"></script>
+        <script>
+            // grab the room from the URL
+            var params={};location.search.replace(/[?&]+([^=&]+)=([^&]*)/gi,function(s,k,v){params[k]=v})
+            
+            var room = params.room;
+            var amReceiver=true;
+
+            // create our webrtc connection
+
+  var audVol=0;
+
+  var switcherSlots=[];
+  var switcherPeers=[];
+  var currentSlot=0;
+  
+  var addToSwitcher= function(peerID){
+	  var i=0;
+	  for (i = 0; i<switcherSlots.length; i++){
+	  	if (switcherSlots[i]==undefined){break}
+	  }
+	  switcherSlots[i]=peerID;
+	  
+	  return(i);
+	  
+	  
+  }
+  
+  
+  
+  
+var fadeIn = function(whichSlot){
+console.log("fading in", whichSlot)
+		//$("#" +switcherSlots[whichSlot] + "_video_incoming").prop("volume",1)
+		$("#" +switcherSlots[whichSlot] + "_video_incoming").animate({ // call animate on the object
+    volume: 1 // specify the t property of the object to be animated
+		}, {
+    duration: 1000,
+    easing: 'linear'});
+	
+}
+  
+  
+var fadeOut = function(whichSlot){
+console.log("fading out", whichSlot)
+		//$("#" +switcherSlots[whichSlot] + "_video_incoming").prop("volume",1)
+		$("#" +switcherSlots[whichSlot] + "_video_incoming").animate({ // call animate on the object
+    volume: 0 // specify the t property of the object to be animated
+		}, {
+    duration: 1000,
+    easing: 'linear'});
+	
+}
+  
+  
+  
+
+
+           
+											 	
+            
+            var webrtc = new SimpleWebRTC({
+                // the id/element dom element that will hold "our" video
+                localVideoEl: 'localVideo',
+                // the id/element dom element that will hold remote videos
+                remoteVideosEl: '',
+                // immediately ask for camera access
+                autoRequestMedia: true,
+                receiveMedia: {
+				      	  offerToReceiveAudio: 1,
+				        	offerToReceiveVideo: 1
+				 			   },
+                debug: false,
+                nick: "TVReceiver",
+                detectSpeakingEvents: true,
+         				media: {
+     									 audio: false,
+											 video: false
+											},
+         				url: '/'
+            });
+
+            // when it's ready, join if we got a room from the URL
+            webrtc.on('readyToCall', function () {
+                // you can name it anything
+                if (room) webrtc.joinRoom(room);
+               // setTimeout(function(){webrtc.setVolumeForAll(0);},1000);
+            
+            });
+
+            webrtc.on('channelMessage', function (peer, label, data) {
+ 
+            });
+            	webrtc.on('createdPeer',function(peer){
+            console.log("added a peer, y'all.", peer);            
+          	})
+            
+            webrtc.on('videoAdded', function (video, peer) {
+            	console.log("peer id =", peer.id);
+            	
+            	
+            	//webrtc.setVolumeForAll(0);
+            	
+                console.log('video added', peer);
+                var remotes = document.getElementById('remotes');
+                if (remotes) {
+                    var d = document.createElement('div');
+                    d.className = 'videoContainer';
+                    d.id = 'container_' + webrtc.getDomId(peer);
+                    d.appendChild(video);
+                    video.className="fullscreen-bg__video";
+                    video.volume=0;
+                 
+                    remotes.appendChild(d);
+                }
+                
+                var mySlot=addToSwitcher(peer.id);
+                switcherPeers[mySlot]=peer;
+                
+	 							if (mySlot==currentSlot){
+	 								$("#container_"+peer.id + "_video_incoming").css("visibility", "visible");
+	 								fadeIn(mySlot);
+	 								
+	 								} //if the camera is active, don't wait to load the video in case it drops or whatever
+	  						
+		  					
+		  					setTimeout(function(){		   
+		  							switcherPeers[mySlot].sendDirectly('setCamera', 'camera',mySlot);
+		  					},2000); //we have to do this because for some reason you can't immediately message a new peer
+		  				
+	  						//peer.sendDirectly('myroom', 'camera',mySlot);
+                
+            });
+            webrtc.on('videoRemoved', function (video, peer) {
+                console.log('video removed ', peer.id);
+                switcherPeers[switcherSlots.indexOf(peer.id)]=undefined;
+                switcherSlots[switcherSlots.indexOf(peer.id)]=undefined;
+                
+                
+                var remotes = document.getElementById('remotes');
+                var el = document.getElementById('container_' + webrtc.getDomId(peer));
+                if (remotes && el) {
+                    remotes.removeChild(el);
+                }
+            });
+            webrtc.on('volumeChange', function (volume, treshold) {
+                //console.log('own volume', volume);
+                //showVolume(document.getElementById('localVolume'), volume);
+            });
+
+            // Since we use this twice we put it here
+
+    
+    
+       
+var isFullScreen = function() {
+	console.log("Checking fullscreen");
+	return (document.fullscreenElement && document.fullscreenElement !== null) ||
+        (document.webkitFullscreenElement && document.webkitFullscreenElement !== null) ||
+        (document.mozFullScreenElement && document.mozFullScreenElement !== null) ||
+        (document.msFullscreenElement && document.msFullscreenElement !== null);
+}
+
+var goFullscreen = function() {
+      if(document.documentElement.requestFullscreen) {
+         document.documentElement.requestFullscreen();
+      } else if(document.documentElement.webkitRequestFullscreen) {
+         document.documentElement.webkitRequestFullscreen();
+      } else if(document.documentElement.mozRequestFullScreen) {
+         document.documentElement.mozRequestFullScreen();
+      } else if(document.documentElement.msRequestFullscreen) {
+         document.documentElement.msRequestFullscreen();
+      }
+};
+
+
+
+var exitFullscreen = function() {
+	console.log("exiting fullscreen");
+if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.msExitFullscreen) {
+      document.msExitFullscreen();
+    } else if (document.mozCancelFullScreen) {
+      document.mozCancelFullScreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    }
+};
+
+ 
+var switchCam=function(slot){
+ if (switcherPeers[slot]){
+
+ if(currentSlot!=slot){
+					$("#container_"+switcherSlots[(slot)] + "_video_incoming").css("visibility", "visible");
+					fadeIn(slot);
+					$("#container_"+switcherSlots[currentSlot] + "_video_incoming").css("visibility", "hidden");
+					fadeOut(currentSlot);
+					
+					if (switcherPeers[currentSlot]){//don't do it if the device has already disconnected
+						switcherPeers[currentSlot].sendDirectly('live', 'camActive',false);				
+					}
+					
+	}
+	currentSlot=slot;		
+	switcherPeers[slot].sendDirectly('live', 'camActive',true);	
+}
+};	
+	 
+     	
+	$(document).on('keydown', function(event) { //key is pressed
+			if (event.which==70){	if (isFullScreen()){exitFullscreen()}else{goFullscreen()};} //f key fullscreens
+			var actualKey = (event.which-49);
+					console.log(actualKey);
+			if (actualKey>=0 && actualKey<=9){ //only nine cameras supported at present
+				switchCam(actualKey)	
+			}
+	});
+		
+	$(document).on('dblclick', function(event) { 
+	if (isFullScreen()){exitFullscreen()}else{goFullscreen()};
+	});
+
+
+
+
+function exitHandler() //what happens when you enter or exit full screen
+{
+	if (document.webkitIsFullScreen || document.mozFullScreen || document.msFullscreenElement) {
+		setTimeout(function(){$("*").css("cursor", "none");},500);		
+	} else {
+		$("*").css("cursor", "default");
+	}
+}
+
+	if (document.addEventListener) { //trigger if fullscreen happens
+		document.addEventListener('webkitfullscreenchange', exitHandler, false);
+		document.addEventListener('mozfullscreenchange', exitHandler, false);
+		document.addEventListener('fullscreenchange', exitHandler, false);
+		document.addEventListener('MSFullscreenChange', exitHandler, false);
+	}
+
+		
+           
+        </script>
+    </body>
+</html>

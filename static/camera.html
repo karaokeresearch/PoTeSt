@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>PoTeSt Camera</title>
+    </head>
+    <body>
+     
+        <style>
+        	           
+					body
+					{
+						  margin: 0em auto;
+            	padding: 0 0em;
+					    width: 100vw;
+					    height: 100vh;
+				    	background-color: white;	
+					}
+        	     
+
+            #status { 
+            	 position: fixed;
+            	 display: none;
+            }
+         	
+            .videoContainer {
+            	display: none;
+   				    position: fixed;
+					    top: 0;
+					    right: 0;
+					    bottom: 0;
+					    left: 0;
+					    overflow: hidden;
+		
+            }
+            
+            #selectSpecs{
+            	padding: 0em 0em 0em 1em;
+           }
+  
+					  .fullscreen-bg__video {
+					    position: absolute;
+					    top: 0;
+					    left: 0;
+					    width: 100%;
+					    height: 100%;
+					}
+
+            .volume_bar {
+                position: absolute;
+                width: 5px;
+                height: 0px;
+                right: 0px;
+                bottom: 0px;
+                background-color: #12acef;
+            }
+            
+        </style>
+
+        <div id="selectSpecs"><h1>Camera Options</h1>
+        	
+        	Video: <select id="selectVideo"></select>
+        <br><br>
+        	Audio:
+        	<select id="selectAudio"></select>
+					<br><br>Video resolution: 
+					
+					<select id="selectResolution">
+					<option>16:9 3840x2160</option>
+					<option>16:9 1920x1080</option>
+					<option>4:3 1600x1200</option>
+					<option selected>16:9 1280x720</option>
+					<option>4:3 800x600</option>
+					<option>4:3 640x480</option>
+					<option>16:9 640x360</option>
+					<option>4:3 352x288</option>
+					<option>4:3 320x240</option>	
+					<option>4:3 176x144</option>
+					<option>4:3 160x120</option>
+					</select>
+					<br><br>
+					Framerate (ignored since it doesn't work in Firefox and is maybe a bad idea elsewhere):  <input size=3 type="text" id="fps" value="24"></input>
+					<br><br>
+					<button onclick="startRTC()">Broadcast</button>
+					        	
+        	</div>
+        
+ 				<div class="videoContainer">
+            <video id="localVideo" class="fullscreen-bg__video" oncontextmenu="return false;"></video>
+           
+        </div>
+       
+        <div id="status" style="color: #cccccc; font-family: Arial; font-size:5vh" >This end up</div>
+        <script src="jquery.min.js"></script>
+        <script src="simplewebrtc/simplewebrtc-with-adapter.bundle.js"></script>
+        <script>
+            // grab the room from the URL
+            var params={};location.search.replace(/[?&]+([^=&]+)=([^&]*)/gi,function(s,k,v){params[k]=v})
+            
+            var room = params.room;
+            
+            var amCam=true;
+
+            // create our webrtc connection
+            
+           
+ 
+ $("#localVideo").on('click',function(){
+ 	console.log("clicked");
+	if (isFullScreen()){exitFullscreen()}else{goFullscreen()}
+});
+          
+            
+ function showDevices(devs) {
+ 
+ var audioOptions="";
+ var videoOptions="";
+ var selected="";
+   for (var i =0; i<devs.length; i++){ 
+   		//console.log(devs[i]);
+  	if(devs[i].kind =="videoinput"){
+  	if (devs[i].label.match(/back/i)){selected = "selected"}else{selected=""};
+  	videoOptions = videoOptions + '<option ' + selected +' value="' + devs[i].deviceId +'">' + devs[i].label +'</option>';
+  	}
+  	if(devs[i].kind =="audioinput"){
+  	audioOptions = audioOptions + '<option value="' + devs[i].deviceId +'">' + devs[i].label +'</option>';
+  	}
+  	
+	}
+	//console.log(videoOptions);
+	$("#selectVideo").html(videoOptions);
+  $("#selectAudio").html(audioOptions);
+
+//	console.log(audioOptions);
+	
+}
+
+var isFullScreen = function() {
+	console.log("Checking fullscreen");
+	return (document.fullscreenElement && document.fullscreenElement !== null) ||
+        (document.webkitFullscreenElement && document.webkitFullscreenElement !== null) ||
+        (document.mozFullScreenElement && document.mozFullScreenElement !== null) ||
+        (document.msFullscreenElement && document.msFullscreenElement !== null);
+}
+
+var goFullscreen = function() {
+      if(document.documentElement.requestFullscreen) {
+         document.documentElement.requestFullscreen();
+      } else if(document.documentElement.webkitRequestFullscreen) {
+         document.documentElement.webkitRequestFullscreen();
+      } else if(document.documentElement.mozRequestFullScreen) {
+         document.documentElement.mozRequestFullScreen();
+      } else if(document.documentElement.msRequestFullscreen) {
+         document.documentElement.msRequestFullscreen();
+      }
+};
+
+
+
+var exitFullscreen = function() {
+if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.msExitFullscreen) {
+      document.msExitFullscreen();
+    } else if (document.mozCancelFullScreen) {
+      document.mozCancelFullScreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    }
+};
+
+var lockOrientation= function() {
+			if (typeof screen.orientation !== "undefined" && screen.orientation.lock !== "undefined" ){
+				screen.orientation.lock('landscape-primary');
+			} else if(window.screen.lockOrientation){
+				window.screen.lockOrientation('landscape-primary');
+			} else if(window.screen.mozLockOrientation){
+				window.screen.mozLockOrientation('landscape-primary');
+			} else if (window.screen.msLockOrientation){
+			window.screen.msLockOrientation('landscape-primary');
+			} 
+};
+
+
+ navigator.mediaDevices.enumerateDevices().then(showDevices);
+ 
+ var webrtc;
+ 
+ var startRTC = function(){  
+ goFullscreen();
+ setTimeout(lockOrientation, 1000);
+ 	
+ 	
+ 	
+ 	  	$("body").css("background-color", "black")
+ 	  	$("#selectSpecs").css("display", "none");
+ 	  	$(".videoContainer").css("display", "block");
+ 	  	$("#status").css("display", "block");
+ 	  	
+ 	  	
+            var myMediaSpecs = {
+     									 audio: {
+     									 	mandatory: {
+     									 		sourceId:  $("#selectAudio").val()
+     									 	}
+     									 },
+											 video: { 
+											 	
+											 	                        
+											 	    width: { min: $("#selectResolution").val().match(/\s([0-9]+)/)[1] },
+											 	    height: { min: $("#selectResolution").val().match(/x([0-9]+)/)[1] },
+											      sourceId:  $("#selectVideo").val(),
+											 	  }                      
+											 	
+											 	
+         						  // mandatory: {
+				              //  minWidth: $("#selectResolution").val().match(/\s([0-9]+)/)[1],
+        				      //  minHeight: $("#selectResolution").val().match(/x([0-9]+)/)[1],        
+				              //  minWidth: $("#selectResolution").val().match(/\s([0-9]+)/)[1],
+        				      //  minHeight: $("#selectResolution").val().match(/x([0-9]+)/)[1],        
+                			//	maxFrameRate: $("#fps").val(),
+                			//	sourceId:  $("#selectVideo").val()
+                      //
+    		       				//	}
+    									//}
+    																	 
+     				 }; 
+ 	
+ 	
+            webrtc = new SimpleWebRTC({
+                // the id/element dom element that will hold "our" video
+                localVideoEl: 'localVideo',
+                // the id/element dom element that will hold remote videos
+                remoteVideosEl: '',
+                // immediately ask for camera access
+                
+                debug: false,
+						    autoRequestMedia: true,
+						    localVideo: {mirror: false,
+						    						muted: true
+						    	},			
+						    nick: "TVSender",	
+         				media: myMediaSpecs,
+         				receiveMedia: {
+				      	  offerToReceiveAudio: 1,
+				        	offerToReceiveVideo: 1
+				 			   },
+				 			   url: '/'
+
+            });
+            console.log(myMediaSpecs);
+
+            // when it's ready, join if we got a room from the URL
+            webrtc.on('readyToCall', function () {
+                // you can name it anything
+                //webrtc.mute();
+                //setTimeout(function(){webrtc.unmute()},2000)
+                if (room) webrtc.joinRoom(room);
+            });
+
+//            function showVolume(el, volume) {
+//                if (!el) return;
+//                if (volume < -45) { // vary between -45 and -20
+//                    el.style.height = '0px';
+//                } else if (volume > -20) {
+//                    el.style.height = '100%';
+//                } else {
+//                    el.style.height = '' + Math.floor((volume + 100) * 100 / 25 - 220) + '%';
+//                }
+//            }
+ 						webrtc.on('createdPeer',function(peer){
+            console.log("added a peer, y'all", peer);
+            console.log(peer.nick);
+            
+          	});
+
+            webrtc.on('channelMessage', function (peer, label, data) {
+                console.log("WOOOOOOOOOOO", peer,label,data);
+                
+                if (data.type=="camActive"){
+                	console.log("live data");
+                	if(data.payload){
+                 		$("#status").css("color", "red")
+                	}else{$("#status").css("color", "#CCCCCC")}
+                }
+                
+                if (data.type=="camera"){
+                	$("#status").html("CAMERA " + data.payload);  
+                }
+                if (data.type == 'volume') {
+                   // showVolume(document.getElementById('volume_' + peer.id), data.volume);
+                }
+            });
+            webrtc.on('videoAdded', function (video, peer) {
+                console.log('video added', peer);
+             if (peer.nick=="TVSender"){  
+            	console.log("oh gosh darn it, it's another camera, removing it.");
+            	peer.pc.pc.removeStream(webrtc.webrtc.localStreams[0]);
+            
+            
+            //this is supposed to make things better but I suspect it just makes them worse.
+            
+            //	peer.pc.offer({
+          	//	  offerToReceiveAudio: 0,
+		        //    offerToReceiveVideo: 0
+    			  //  }, function(err,expandedOffer)
+        		//		{console.log("exp:", err, expandedOffer)
+        		//	});
+            }
+                
+                
+                
+          //      var remotes = document.getElementById('remotes');
+          //      if (remotes) {
+          //          var d = document.createElement('div');
+          //          d.className = 'videoContainer';
+          //          d.id = 'container_' + webrtc.getDomId(peer);
+          //          d.appendChild(video);
+          //          console.log(video);
+          //          video.className="fullscreen-bg__video";
+          //         // var vol = document.createElement('div');
+          //         // vol.id = 'volume_' + peer.id;
+          //         // vol.className = 'volume_bar';
+          //          video.onclick = function () {
+          //            //  video.style.width = video.videoWidth + 'px';
+          //            //  video.style.height = video.videoHeight + 'px';
+          //          };
+          //          d.appendChild(vol);
+          //          remotes.appendChild(d);
+          //      }
+            });
+            webrtc.on('videoRemoved', function (video, peer) {
+                console.log('video removed ', peer);
+              //  var remotes = document.getElementById('remotes');
+              //  var el = document.getElementById('container_' + webrtc.getDomId(peer));
+              //  if (remotes && el) {
+              //      remotes.removeChild(el);
+              //  }
+            });
+//            webrtc.on('volumeChange', function (volume, treshold) {
+//                //console.log('own volume', volume);
+//                showVolume(document.getElementById('localVolume'), volume);
+//            });
+
+            // Since we use this twice we put it here
+//            function setRoom(name) {
+//                $('form').remove();
+//                $('h1').text(name);
+//                $('#subTitle').text('Link to join: ' + location.href);
+//                $('body').addClass('active');
+//            }
+//
+            if (room) {
+         //       setRoom(room);
+            } else {
+                $('form').submit(function () {
+                    var val = $('#sessionInput').val().toLowerCase().replace(/\s/g, '-').replace(/[^A-Za-z0-9_\-]/g, '');
+                    webrtc.createRoom(val, function (err, name) {
+                        console.log(' create room cb', arguments);
+
+                        var newUrl = location.pathname + '?room=' + name;
+                        if (!err) {
+                            history.replaceState({foo: 'bar'}, null, newUrl);
+                            setRoom(name);
+                        } else {
+                            console.log(err);
+                        }
+                    });
+                    return false;
+                });
+            }
+
+
+            webrtc.on('localScreenStopped', function () {
+           
+            });
+
+ };        
+        </script>
+    </body>
+</html>

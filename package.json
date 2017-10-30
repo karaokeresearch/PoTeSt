@@ -1,0 +1,14 @@
+{
+  "name": "PoTeSt",
+  "description": "Portable Television Station",
+  "version": "1.0.0",
+  "dependencies": {
+  	"express":	"4.16.2",
+    "node-uuid": "1.2.0",
+    "socket.io": "1.3.7",
+		"command-line-args":  "4.0.7" 		
+  },
+  "main": "server.js",
+
+  "license": "MIT"
+}
