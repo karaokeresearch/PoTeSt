@@ -5,7 +5,7 @@ A WebRTC-based television studio you can operate with a few phones and a laptop!
 
 ## How to install:
 
-* Download and install
+* Download or clone into a directory then cd to that directory and type:
 
 ```npm install```
 
@@ -19,12 +19,20 @@ Filenames are:
 
 ```./signalmaster/generate-ssl-certs.sh```
 
-OK, now you can run it!
 
+## Using PoTeSt
 ```node server.js```
 
 That starts it on port 8080
 
+### Browser
+
+* On the PC (viewer) open a browser to for instance: https://10.0.0.9:8080 or whatever your IP address or FQDN is. Be sure to use https or it won't work! Connect multiple phones to the same address and start camera sessions. 
+* Tap once on the camera to fullscreen and lock orientation. Double click or type f to fullscreen the viewer. 
+* On the viewer, keys 1-9 cycle through different cameras. 
+* Stream it to the world using a streaming application such as OBS!
+
+## Advanced port handling
 Want to run it on port 443 like a real SSL genius? On Mac at least, you need root to access low port numbers
 
 ```sudo node server.js -p 443```
@@ -33,9 +41,10 @@ Want to redirect port 80 to 443 for seamless browser experience?
 
 ```sudo node server.js -p 443 -r```
 
-That's it! Connect the PC and open a viewer, connect multiple phones and start a camera session. Tap once on the camera to fullscreen and lock orientation. Double click or type f to fullscreen the viewer. Now stream it!
+If you're using a Let's Encrypt certificate and you've got a DNS mapping for studio.mydomain.example that answers your LAN IP address, you can bypass the browser warning that comes with a fake certificate completely. Paired with the 443/80 options, you get a pretty seamless user experience.
 
-Potential problems:
+
+## Potential problems:
 I was warned at https://gitter.im/andyet/SimpleWebRTC of one potential issue I ignored. Here's how the convo went down:
 
 ```
