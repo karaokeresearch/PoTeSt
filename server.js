@@ -6,10 +6,24 @@ var fs = require('fs'),
 
 var app = express();
 var port = 8080; //default
-const options = commandLineArgs( { name: 'port', alias: 'p', type: Number })
+const options = commandLineArgs([{ name: 'port', alias: 'p', type: Number },
+																{ name: 'redir', alias: 'r', type: Boolean }], 
+																{ partial: true })
 
 if (options.port){port=options.port}
 console.log("starting on port", port);
+
+if (options.redir){
+	const redirApp = express();
+	redirApp.get('/', function(req, res){
+		var redirstr = req.headers.host;	
+		res.redirect('https://' + redirstr.match(/([^:]*)/)[0]+ ":" +port);
+	});
+	
+	console.log ("redirecting port 80 to port " + 443);
+	redirApp.listen(80);
+	
+	}
 
 var config = {
 	"isDev": false,
