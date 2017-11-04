@@ -100,7 +100,7 @@ console.log("fading in", whichSlot)
 		$("#" +switcherSlots[whichSlot] + "_video_incoming").animate({ // call animate on the object
     volume: 1 // specify the t property of the object to be animated
 		}, {
-    duration: 1000,
+    duration: 500,
     easing: 'linear'});
 	
 }
@@ -112,18 +112,12 @@ console.log("fading out", whichSlot)
 		$("#" +switcherSlots[whichSlot] + "_video_incoming").animate({ // call animate on the object
     volume: 0 // specify the t property of the object to be animated
 		}, {
-    duration: 1000,
+    duration: 500,
     easing: 'linear'});
 	
 }
   
-  
-  
 
-
-           
-											 	
-            
             var webrtc = new SimpleWebRTC({
                 // the id/element dom element that will hold "our" video
                 localVideoEl: 'localVideo',

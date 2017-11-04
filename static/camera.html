@@ -96,6 +96,8 @@
 					<br><br>
 					Framerate (ignored since it doesn't work in Firefox and is maybe a bad idea elsewhere):  <input size=3 type="text" id="fps" value="24"></input>
 					<br><br>
+					Once you click broadcast, tap or click on the screen to go fullscreen and lock orientation.
+					<br><br>
 					<button onclick="startRTC()">Broadcast</button>
 					        	
         	</div>
@@ -142,11 +144,11 @@
   	}
   	
 	}
-	//console.log(videoOptions);
+
 	$("#selectVideo").html(videoOptions);
   $("#selectAudio").html(audioOptions);
 
-//	console.log(audioOptions);
+
 	
 }
 
@@ -168,6 +170,7 @@ var goFullscreen = function() {
       } else if(document.documentElement.msRequestFullscreen) {
          document.documentElement.msRequestFullscreen();
       }
+     setTimeout(lockOrientation, 1000);
 };
 
 
@@ -201,11 +204,7 @@ var lockOrientation= function() {
  
  var webrtc;
  
- var startRTC = function(){  
- goFullscreen();
- setTimeout(lockOrientation, 1000);
- 	
- 	
+ var startRTC = function(){
  	
  	  	$("body").css("background-color", "black")
  	  	$("#selectSpecs").css("display", "none");
@@ -226,18 +225,6 @@ var lockOrientation= function() {
 											 	    height: { min: $("#selectResolution").val().match(/x([0-9]+)/)[1] },
 											      sourceId:  $("#selectVideo").val(),
 											 	  }                      
-											 	
-											 	
-         						  // mandatory: {
-				              //  minWidth: $("#selectResolution").val().match(/\s([0-9]+)/)[1],
-        				      //  minHeight: $("#selectResolution").val().match(/x([0-9]+)/)[1],        
-				              //  minWidth: $("#selectResolution").val().match(/\s([0-9]+)/)[1],
-        				      //  minHeight: $("#selectResolution").val().match(/x([0-9]+)/)[1],        
-                			//	maxFrameRate: $("#fps").val(),
-                			//	sourceId:  $("#selectVideo").val()
-                      //
-    		       				//	}
-    									//}
     																	 
      				 }; 
  	
@@ -267,22 +254,9 @@ var lockOrientation= function() {
 
             // when it's ready, join if we got a room from the URL
             webrtc.on('readyToCall', function () {
-                // you can name it anything
-                //webrtc.mute();
-                //setTimeout(function(){webrtc.unmute()},2000)
                 if (room) webrtc.joinRoom(room);
             });
 
-//            function showVolume(el, volume) {
-//                if (!el) return;
-//                if (volume < -45) { // vary between -45 and -20
-//                    el.style.height = '0px';
-//                } else if (volume > -20) {
-//                    el.style.height = '100%';
-//                } else {
-//                    el.style.height = '' + Math.floor((volume + 100) * 100 / 25 - 220) + '%';
-//                }
-//            }
  						webrtc.on('createdPeer',function(peer){
             console.log("added a peer, y'all", peer);
             console.log(peer.nick);
@@ -311,80 +285,13 @@ var lockOrientation= function() {
              if (peer.nick=="TVSender"){  
             	console.log("oh gosh darn it, it's another camera, removing it.");
             	peer.pc.pc.removeStream(webrtc.webrtc.localStreams[0]);
-            
-            
-            //this is supposed to make things better but I suspect it just makes them worse.
-            
-            //	peer.pc.offer({
-          	//	  offerToReceiveAudio: 0,
-		        //    offerToReceiveVideo: 0
-    			  //  }, function(err,expandedOffer)
-        		//		{console.log("exp:", err, expandedOffer)
-        		//	});
             }
                 
-                
-                
-          //      var remotes = document.getElementById('remotes');
-          //      if (remotes) {
-          //          var d = document.createElement('div');
-          //          d.className = 'videoContainer';
-          //          d.id = 'container_' + webrtc.getDomId(peer);
-          //          d.appendChild(video);
-          //          console.log(video);
-          //          video.className="fullscreen-bg__video";
-          //         // var vol = document.createElement('div');
-          //         // vol.id = 'volume_' + peer.id;
-          //         // vol.className = 'volume_bar';
-          //          video.onclick = function () {
-          //            //  video.style.width = video.videoWidth + 'px';
-          //            //  video.style.height = video.videoHeight + 'px';
-          //          };
-          //          d.appendChild(vol);
-          //          remotes.appendChild(d);
-          //      }
             });
             webrtc.on('videoRemoved', function (video, peer) {
-                console.log('video removed ', peer);
-              //  var remotes = document.getElementById('remotes');
-              //  var el = document.getElementById('container_' + webrtc.getDomId(peer));
-              //  if (remotes && el) {
-              //      remotes.removeChild(el);
-              //  }
+                console.log('video removed ', peer);   
             });
-//            webrtc.on('volumeChange', function (volume, treshold) {
-//                //console.log('own volume', volume);
-//                showVolume(document.getElementById('localVolume'), volume);
-//            });
-
-            // Since we use this twice we put it here
-//            function setRoom(name) {
-//                $('form').remove();
-//                $('h1').text(name);
-//                $('#subTitle').text('Link to join: ' + location.href);
-//                $('body').addClass('active');
-//            }
-//
-            if (room) {
-         //       setRoom(room);
-            } else {
-                $('form').submit(function () {
-                    var val = $('#sessionInput').val().toLowerCase().replace(/\s/g, '-').replace(/[^A-Za-z0-9_\-]/g, '');
-                    webrtc.createRoom(val, function (err, name) {
-                        console.log(' create room cb', arguments);
-
-                        var newUrl = location.pathname + '?room=' + name;
-                        if (!err) {
-                            history.replaceState({foo: 'bar'}, null, newUrl);
-                            setRoom(name);
-                        } else {
-                            console.log(err);
-                        }
-                    });
-                    return false;
-                });
-            }
-
+           
 
             webrtc.on('localScreenStopped', function () {
            
